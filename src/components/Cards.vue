@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <div class="layout-padding" style="width: 80vh">
       <q-list>
         <q-item v-for="(resultado, chave) in resultados" :key="chave">
@@ -13,13 +12,14 @@
               </q-card-title>
               <q-card-main>
                 <p>{{resultado.descricao}}</p>
+                <p>{{resultado.imgurl}}</p>
+                <p>{{resultado.imgname}}</p>
               </q-card-main>
               <q-card-separator />
               <q-card-actions>
                 <q-btn flat @click="likeCard(chave)" color="green" icon="fa-thumbs-up" > ( {{resultado.like}} )</q-btn>
                 <q-btn flat @click="dislikeCard(chave)" color="red" icon="fa-thumbs-down" > ( {{resultado.dislike}} )</q-btn>
-                <q-btn flat @click="deletarCard(chave)" color="black" icon="fa-trash" />
-                <q-btn flat @click="testeUploadArquivo()" color="black" icon="fa-arrow-up" />
+                <q-btn flat @click="deletarCard(chave,resultado.imgname)" color="black" icon="fa-trash" />
               </q-card-actions>
             </q-card>   
         </q-item>
@@ -110,14 +110,14 @@ export default {
   },
   data () {
     return {
-      teste: "texto de teste",
       resultados: [],
       registro: {
         nome: "",
         descricao: "",
         like: 0,
         dislike: 0,
-        imgurl: ""
+        imgurl: "",
+        imgname: ""
       }
     }
   },
@@ -146,14 +146,24 @@ export default {
           Loading.hide()
       },this);      
     },
-    deletarCard(key){
+    deletarCard(key,imgref){
+      let objeto = this
+      
+      let deletRef = objeto.$sr.child(imgref);
       this.$db.ref("cards/"+key).remove()
-        .then(function(result){
+        .then((result) => {
+          
           alert("Cadastrado apagado com sucesso ");
           console.log(result);
-        })
+          // Delete the file
+          deletRef.delete().then(function() {
+            alert("arquivo apagado com sucesso ");
+          }).catch(function(error) {
+            alert("Erro ao apagar arquivo");
+          });
+        },deletRef)
         .catch(function(error){
-          alert("Erro ao apagar cadastrar");
+          alert("Erro ao apagar cadastro");
           console.log(error.message);
         });      
     },
