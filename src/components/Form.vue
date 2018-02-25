@@ -18,8 +18,9 @@
           <q-card-main>
             <q-input float-label="Nome" v-model="registro.nome" />
             <q-input float-label="Descricao" v-model="registro.descricao" />
-            <q-input float-label="IMGURL" v-model="registro.imgurl" />
-            <q-uploader :firebase-storage="$sr" v-model="registro.imgfile" url="http://localhost:8081/assets/teste" />
+            <q-input float-label="TESTES - imgurl" v-model="registro.imgurl" />
+            <q-input float-label="TESTES - imgname" v-model="registro.imgname" />
+            <input type="file" id="fileField"/>
           </q-card-main>
         </q-card>
       </div>
@@ -65,13 +66,15 @@ export default {
   data () {
     return {
       url: '',
+      rimgurl: "",
       registro: {
         nome: "",
         descricao: "",
         like: 0,
         dislike: 0,
         imgfile: null,
-        imgurl: "http://img.taste.com.au/aCb2fmQW/w643-h428-cfill-q90/taste/2016/11/cinnamon-donuts-15520-1.jpeg"
+        imgurl: "",
+        imgname: ""
       },
       registro_empty: {
         nome: "",
@@ -79,7 +82,8 @@ export default {
         like: 0,
         dislike: 0,
         imgfile: null,
-        imgurl: "http://img.taste.com.au/aCb2fmQW/w643-h428-cfill-q90/taste/2016/11/cinnamon-donuts-15520-1.jpeg"
+        imgurl: "",
+        imgname: ""
       }
     }
   },
@@ -106,23 +110,42 @@ export default {
         color: 'green'
       })
       let objeto = this
-      this.$db.ref("cards").push(this.registro)
-          .then(function(result){
-            alert("Cadastrado com suceso ");
-            console.log("Cadastrado com suceso ")
-            console.log(result)
-            objeto.$refs.form_registro_card.close()
-           // $("button").removeAttr("disabled");
-            //$("#formcadastrar").trigger("reset");	
-            //pageListar();
-            Loading.hide()
-          },objeto)
-          .catch(function(error){
-            alert("Erro ao cadastrar");
-            console.log(error.message)
-            //$("button").removeAttr("disabled");
-            Loading.hide()
-          });      
+
+      const file = document.querySelector('#fileField').files[0];
+      const name = file.name;
+      const nname = (+new Date()) + '-' + file.name;
+      const metadata = { contentType: file.type };
+      this.registro.imgname = nname
+      const task = this.$sr.child(nname).put(file, metadata);
+      task.then((snapshot) => {
+        const url = snapshot.downloadURL;
+        let objeto2 = objeto
+        objeto.rimgurl = url
+        objeto.registro.imgurl = url
+        console.log("UPLOAD EFETUADO !");
+        console.log(url);
+        console.log("UPLOAD EFETUADO imgurl !");
+        console.log(this.imgurl);
+        
+        objeto.$db.ref("cards").push(this.registro)
+            .then((result) => {
+              console.log("Cadastrado com suceso ")
+              console.log(result)
+              Loading.hide()
+            },objeto2)
+            .catch(function(error){
+              alert("Erro ao cadastrar");
+              console.log(error.message)
+              //$("button").removeAttr("disabled");
+              Loading.hide()
+            });
+
+      },objeto).catch((error) => {
+        console.log("ERRO NO UPLOAD !");
+        console.error(error);
+      });
+
+
       /*this.$http({
         method: 'post',
         url: 'http://127.0.0.1:8000/api/propriedades',
@@ -148,6 +171,11 @@ export default {
             bgColor: 'white'
           })
         })*/
+    }
+  },
+  watch: {
+    'rimgurl': function () {
+      this.close()
     }
   }
 }
